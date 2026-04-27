@@ -1,0 +1,19 @@
+.env
+.venv
+*.pyc
+__pycache__
+.vscode
+myenv/
+.hypothesis/
+.pytest_cache/
+*.egg-info/
+dist/
+
+# Frontend
+ragworks_frontEnd/node_modules/
+ragworks_frontEnd/dist/
+ragworks_frontEnd/.qodo/
+
+# System
+.DS_Store
+Thumbs.db
