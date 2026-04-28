@@ -23,8 +23,16 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from rag_system import RAGSystem
+from rag.rag_system import RAGSystem
 from services.llms import LLMInterface
+from services.logger import get_logger
+from agents.prompts import (
+    coverage_evaluate_sufficiency,
+    coverage_summarise_for_index,
+    coverage_final_decision,
+)
+
+logger = get_logger(__name__)
 
 from pathlib import Path as _Path
 load_dotenv(dotenv_path=_Path(__file__).parent.parent / '.env', override=True)
@@ -89,22 +97,7 @@ def _evaluate_sufficiency(query: str, chunks: list[str]) -> tuple[bool, str]:
     refined_query is only used when is_sufficient is False.
     """
     context = "\n---\n".join(chunks) if chunks else "(no results retrieved)"
-
-    prompt = f"""You are a RAG content evaluator.
-
-User query: {query}
-
-Retrieved content:
-{context}
-
-Decide if the retrieved content is sufficient to answer the user query.
-If YES respond exactly:
-SUFFICIENT: YES
-
-If NO respond exactly:
-SUFFICIENT: NO
-REFINED_QUERY: <one improved search query, no explanation>
-"""
+    prompt = coverage_evaluate_sufficiency(query, context)
     reply = _llm().nvidiaResponse(prompt, temperature=0.2)
 
     sufficient = "SUFFICIENT: YES" in reply
@@ -120,18 +113,7 @@ REFINED_QUERY: <one improved search query, no explanation>
 
 def _summarise_for_index(index_name: str, original_query: str, chunks: list[str]) -> str:
     context = "\n---\n".join(chunks) if chunks else "(no relevant content found)"
-
-    prompt = f"""You are an insurance coverage analyst.
-
-Index / Document source: {index_name}
-User query: {original_query}
-
-Retrieved content:
-{context}
-
-Provide a concise summary of what this document says that is relevant to the query.
-If nothing relevant was found, state that clearly.
-"""
+    prompt = coverage_summarise_for_index(index_name, original_query, context)
     return _llm().nvidiaResponse(prompt, temperature=0.3)
 
 
@@ -149,21 +131,7 @@ def _final_decision(user_query: str, summaries: dict[str, str], history: list[di
         f"### {idx}\n{summary}" for idx, summary in summaries.items()
     )
 
-    prompt = f"""You are an expert insurance coverage advisor you analyse user insurance and suggest the best next move for them.
-
-Conversation history:
-{history_text}
-
-Summaries from insurance documents:
-{combined_summaries}
-
-User query: {user_query}
-
-Using the document summaries above, provide a comprehensive and accurate answer to the user query.
-Mention which document/index each piece of information comes from.
-
-your main task is to suggest the next best step for the user. the answer should say explictly about next step with reason.
-"""
+    prompt = coverage_final_decision(user_query, history_text, combined_summaries)
     return _llm().nvidiaResponse(prompt, temperature=0.4)
 
 
@@ -206,7 +174,7 @@ def coverage_check(user_id: str, index_names: list[str], user_query: str) -> str
         final_chunks: list[str] = []
 
         for iteration in range(1, MAX_ITERATIONS + 1):
-            print(f"[{index_name}] Iteration {iteration} | query: {current_query}")
+            logger.info("RAG iteration %d | index=%s | query=%s", iteration, index_name, current_query)
 
             chunks = _rag_search(index_name, current_query)
             sufficient, refined_query = _evaluate_sufficiency(current_query, chunks)

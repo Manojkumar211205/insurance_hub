@@ -59,7 +59,7 @@ async def upload_insurance(
             detail=f"Unsupported file type: {ext}",
         )
 
-    from doc_processing import process_and_store_document
+    from rag.doc_processing import process_and_store_document
 
     tmp_path = None
     try:

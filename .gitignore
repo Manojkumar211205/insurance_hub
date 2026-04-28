@@ -8,8 +8,13 @@ myenv/
 .pytest_cache/
 *.egg-info/
 dist/
+logs/
 
 # Frontend
+node_modules/
+frontEnd/node_modules/
+frontEnd/dist/
+frontEnd/.qodo/
 ragworks_frontEnd/node_modules/
 ragworks_frontEnd/dist/
 ragworks_frontEnd/.qodo/

@@ -1,7 +1,7 @@
 import os
 import re
-from rag_system import RAGSystem
-from doc_processing import process_and_store_document
+from rag.rag_system import RAGSystem
+from rag.doc_processing import process_and_store_document
 
 def sanitize_index_name(name):
     """

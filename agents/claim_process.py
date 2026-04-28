@@ -2,8 +2,12 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from rag_system import RAGSystem
+from rag.rag_system import RAGSystem
 from services.llms import LLMInterface
+from services.logger import get_logger
+from agents.prompts import claim_extract_insurance_name, claim_format_steps
+
+logger = get_logger(__name__)
 
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"), override=True)
@@ -44,18 +48,9 @@ def _get_available_indexes() -> list[str]:
 def _extract_insurance_name(user_message: str, available_indexes: list[str]) -> str:
     """Uses LLM to match the user's message to one of the available indexes."""
     indexes_str = "\n".join(f"- {idx}" for idx in available_indexes)
-    prompt = f"""You are an insurance assistant.
-The user is asking about a claim process. 
-User message: "{user_message}"
-
-Available insurance indexes in our system:
-{indexes_str}
-
-Which of the available indexes best matches the user's insurance?
-If you find a clear match based on the company name and type (e.g. Health, Life, Motor), reply ONLY with the exact index name from the list.
-If you cannot determine a match with confidence, reply with "UNKNOWN".
-"""
+    prompt = claim_extract_insurance_name(user_message, indexes_str)
     reply = _llm().nvidiaResponse(prompt, temperature=0.1).strip()
+    logger.info("Extracted insurance name: '%s' from user message", reply)
     return reply
 
 def _rag_search(index_name: str, query: str, top_k: int = 5) -> str:
@@ -68,16 +63,7 @@ def _rag_search(index_name: str, query: str, top_k: int = 5) -> str:
 def _format_claim_steps(index_name: str, context: str) -> str:
     """Uses the LLM to format the retrieved text into clear steps."""
     display_name = index_name.replace('_', ' ').title()
-    prompt = f"""You are an expert insurance advisor.
-The user wants to know the claim process for {display_name}.
-
-Retrieved information from policy documents:
-{context}
-
-Based ONLY on the retrieved information, provide a clear, step-by-step guide on how to file a claim.
-Use a numbered list with clear headings. Include any important contact info or deadlines mentioned.
-If the retrieved information does not contain claim steps, politely inform the user that the exact claim procedure is currently unavailable in the documents.
-"""
+    prompt = claim_format_steps(display_name, context)
     return _llm().nvidiaResponse(prompt, temperature=0.3)
 
 # ---------------------------------------------------------------------------
@@ -107,11 +93,11 @@ def get_claim_process(user_message: str) -> str:
 
     # 3. Perform RAG search specifically for claim procedure
     query = f"{target_index.replace('_', ' ')} claim procedure process steps how to file reimbursement cashless"
-    print(f"[{target_index}] Searching for claim process...")
+    logger.info("RAG search for claim process | index=%s", target_index)
     try:
         context = _rag_search(target_index, query, top_k=5)
     except Exception as e:
-        print(f"Error connecting to RAG: {e}")
+        logger.error("RAG search failed | index=%s | error=%s", target_index, e, exc_info=True)
         return "Sorry, I am currently unable to access the documents to find the claim procedure. Please try again later."
     
     # 4. Generate the final step-by-step response

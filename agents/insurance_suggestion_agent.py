@@ -23,8 +23,19 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from rag_system import RAGSystem
+from rag.rag_system import RAGSystem
 from services.llms import LLMInterface
+from services.logger import get_logger
+from agents.prompts import (
+    suggestion_extract_profile_updates,
+    suggestion_ask_missing_fields,
+    suggestion_decide_intent,
+    suggestion_ask_intent_question,
+    suggestion_decompose_query,
+    suggestion_final_recommendation,
+)
+
+logger = get_logger(__name__)
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"), override=True)
 
@@ -105,24 +116,7 @@ def _rag_search(index_name: str, query: str, top_k: int = 5) -> list[str]:
 def _extract_profile_updates(user_message: str, current_profile: dict) -> dict:
     """Ask LLM to extract any profile fields from the latest user message."""
     known = "\n".join(f"  {k}: {v}" for k, v in current_profile.items()) or "  (none yet)"
-    prompt = f"""You are extracting user profile data for insurance recommendation.
-
-Already collected:
-{known}
-
-User message: "{user_message}"
-
-Extract any of these fields if mentioned:
-age, gender, location, marital_status, dependents, income_range,
-monthly_expenses, savings_assets, existing_insurance
-
-Respond ONLY as key=value pairs, one per line. Example:
-age=32
-gender=male
-location=Chennai
-
-If nothing new is found, respond: NONE
-"""
+    prompt = suggestion_extract_profile_updates(known, user_message)
     reply = _llm().nvidiaResponse(prompt, temperature=0.1)
     updates = {}
     if reply.strip().upper() != "NONE":
@@ -145,16 +139,7 @@ def _ask_for_missing_fields(missing: list[str], history: list[dict]) -> str:
         for m in history[-6:] if m.get("role") in ("user", "assistant")
     ) or "No prior conversation."
     fields_str = ", ".join(missing)
-    prompt = f"""You are a friendly insurance advisor collecting user information.
-
-Conversation so far:
-{recent}
-
-Still need to collect: {fields_str}
-
-Ask the user for the MOST IMPORTANT missing field(s) in a natural, conversational way.
-Ask at most 2-3 fields at once. Be warm and brief.
-"""
+    prompt = suggestion_ask_missing_fields(recent, fields_str)
     return _llm().nvidiaResponse(prompt, temperature=0.5)
 
 
@@ -164,16 +149,7 @@ def _decide_intent(user_message: str, history: list[dict]) -> str:
         f"{m['role'].upper()}: {m['content']}"
         for m in history[-4:] if m.get("role") in ("user", "assistant")
     ) or ""
-    prompt = f"""You are an insurance advisor.
-
-{recent}
-USER: {user_message}
-
-What types of insurance is the user interested in?
-Choose from: health, life, motor, all, unclear
-
-Respond with ONE word only: health / life / motor / all / unclear
-"""
+    prompt = suggestion_decide_intent(recent, user_message)
     reply = _llm().nvidiaResponse(prompt, temperature=0.1).strip().lower()
     for t in ("health", "life", "motor", "all"):
         if t in reply:
@@ -186,35 +162,14 @@ def _ask_intent_question(history: list[dict]) -> str:
         f"{m['role'].upper()}: {m['content']}"
         for m in history[-4:] if m.get("role") in ("user", "assistant")
     ) or ""
-    prompt = f"""You are a friendly insurance advisor.
-
-{recent}
-
-Ask the user what type of insurance they are looking for (health, life, motor, or all).
-Be brief and conversational.
-"""
+    prompt = suggestion_ask_intent_question(recent)
     return _llm().nvidiaResponse(prompt, temperature=0.5)
 
 
 def _decompose_query(profile: dict, intent: str, index_name: str) -> list[str]:
     """Generate 2-3 focused sub-queries for a given index based on user profile."""
     profile_str = "\n".join(f"  {k}: {v}" for k, v in profile.items())
-    prompt = f"""You are preparing search queries for an insurance RAG system.
-
-User profile:
-{profile_str}
-
-Insurance interest: {intent}
-Index to search: {index_name}
-
-Generate 2-3 specific search queries to retrieve:
-- Eligibility criteria
-- Coverage benefits
-- Premium range / cost
-- Exclusions
-
-Respond as a numbered list, one query per line. No explanations.
-"""
+    prompt = suggestion_decompose_query(profile_str, intent, index_name)
     reply = _llm().nvidiaResponse(prompt, temperature=0.3)
     queries = []
     for line in reply.strip().splitlines():
@@ -248,27 +203,7 @@ def _final_recommendation(profile: dict, intent: str,
         f"### {idx}\n{content}" for idx, content in index_summaries.items()
     )
 
-    prompt = f"""You are an expert insurance advisor giving a personalised recommendation.
-
-User profile:
-{profile_str}
-
-Insurance interest: {intent}
-
-Conversation history:
-{recent}
-
-Retrieved insurance information:
-{summaries_str}
-
-Based on the user's profile and the retrieved information:
-1. Recommend the BEST insurance plan(s) for this user with clear reasons.
-2. Mention eligibility, key benefits, and estimated premium range if available.
-3. Warn about any exclusions relevant to their profile.
-4. Suggest a clear next step (e.g. "Contact XYZ insurer", "Compare Plan A vs Plan B").
-
-Be specific, warm, and actionable.
-"""
+    prompt = suggestion_final_recommendation(profile_str, intent, recent, summaries_str)
     return _llm().nvidiaResponse(prompt, temperature=0.4)
 
 
@@ -383,7 +318,7 @@ def _run_rag_and_recommend(session: dict, history: list[dict]) -> str:
 
     def _process_index(index_name: str):
         queries = _decompose_query(profile, intent, index_name)
-        print(f"[{index_name}] Queries: {queries}")
+        logger.info("RAG decomposed queries | index=%s | queries=%s", index_name, queries)
         content = _search_index(index_name, queries)
 
         events = [{

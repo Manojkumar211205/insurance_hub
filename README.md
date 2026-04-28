@@ -2,7 +2,9 @@
 
 # 🛡️ Insurance Hub
 
-**An Autonomous AI Insurance Assistant powered by Model Context Protocol, RAG, and Multi-Agent Architecture**
+**A Raw Python Autonomous AI Agent — No LangChain, No LangGraph, No Frameworks**
+
+Built from scratch using pure Python with MCP protocol, custom RAG pipeline, and multi-agent orchestration.
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](#)
 [![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](#)
@@ -10,31 +12,66 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)](#)
 [![Elasticsearch](https://img.shields.io/badge/Elasticsearch-005571?logo=elasticsearch&logoColor=white)](#)
 [![MCP](https://img.shields.io/badge/MCP-Protocol-blueviolet)](#)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white)](#)
+
+### 🎬 [Watch the Demo Video →](https://youtu.be/HTbAmvw2KjQ)
 
 </div>
 
 ---
 
-## 📖 Overview
+## 📊 Problem Statement
 
-Insurance Hub is a full-stack autonomous AI assistant that helps users **discover, compare, and manage insurance policies** through natural conversation. It combines:
+<p align="center">
+  <img src="assets/problem_statement.png" alt="Insurance Management Problems" width="700"/>
+</p>
 
-- **Model Context Protocol (MCP)** for structured tool orchestration
-- **Retrieval-Augmented Generation (RAG)** with Elasticsearch hybrid search for policy-accurate answers
-- **Multi-agent architecture** where specialised sub-agents handle suggestions, claims, and coverage analysis
-- **Persistent memory** via MongoDB for multi-turn conversation continuity
-- **React + TypeScript frontend** with a polished chat interface, user profiles, and insurance management
+Managing insurance is **broken** for most people today:
 
-The system can suggest insurance plans, explain claim procedures, compare coverage across policies, file claims, collect feedback, and process new applications — all autonomously.
+| # | Problem |
+|:-:|---------|
+| 1 | Many individuals hold **multiple insurance policies** (health, life, motor) from different providers — making it hard to manage in one place |
+| 2 | When a real-life situation occurs (hospitalization, accident), users face **confusion deciding which policy** is most suitable |
+| 3 | **No centralized system** exists to compare multiple owned policies and recommend the best option based on the situation |
+| 4 | Users lack proper knowledge of **insurance terms, coverage details, and claim conditions** — leading to poor decisions |
+| 5 | Insurance information is **fragmented across companies and platforms**, making it hard to access and compare |
+| 6 | Reliance on **manual customer support** increases costs and delays response time |
+| 7 | No system provides **real-time, personalized recommendations** based on user profile and current situation |
+| 8 | No **intelligent feedback mechanism** that learns from interactions to improve suggestions over time |
+| 9 | Users are **unable to maximize benefits** of policies they already own |
+| 10 | There is a need for an **intelligent, centralized insurance hub** that can analyze policies, understand queries conversationally, and provide accurate recommendations |
+
+---
+
+## 💡 Our Solution — How Insurance Hub Solves These Problems
+
+<p align="center">
+  <img src="assets/solution_overview.png" alt="Insurance Hub Solution" width="700"/>
+</p>
+
+Insurance Hub is a **raw Python autonomous AI agent** (no LangChain, no frameworks) that solves each problem:
+
+| Problem | How We Solve It |
+|---------|----------------|
+| Multiple scattered policies | **Centralized dashboard** — upload all policies to one platform, view them in user profile |
+| Confusion during emergencies | **Coverage Check Agent** — compares all your policies in parallel and recommends the best one for your situation |
+| No comparison system | **Multi-index RAG search** — searches across all uploaded policy documents simultaneously |
+| Lack of insurance knowledge | **Conversational AI** — explains terms, coverage, and claim procedures in plain language |
+| Fragmented information | **Elasticsearch hybrid search** — all policy documents indexed and searchable with BM25 + vector search |
+| Manual support delays | **Autonomous agent** — instant responses 24/7, handles suggestions, claims, coverage checks autonomously |
+| No personalization | **Profile-aware recommendations** — collects user profile (age, income, dependents) and tailors suggestions |
+| No learning mechanism | **Persistent MongoDB memory** — remembers past conversations and builds on previous interactions |
+| Underutilized benefits | **Proactive coverage analysis** — suggests which policy to claim based on your specific situation |
+| Need for intelligent hub | **This is it** — MCP-orchestrated multi-agent system with RAG, guardrails, and structured logging |
 
 ---
 
 ## 🏗️ System Architecture
 
+> **Note:** This is a **raw Python agent** — all agent logic, ReAct loops, tool orchestration, memory management, and RAG pipelines are implemented from scratch without any AI agent framework.
+
 ```mermaid
 graph TB
-    subgraph Client["🖥️ Frontend - React + Vite"]
+    subgraph Client["🖥️ Frontend — React + Vite + Tailwind"]
         LOGIN["Login / Signup"]
         SETUP["Insurance Setup"]
         UPLOAD["Document Upload"]
@@ -44,17 +81,23 @@ graph TB
 
     subgraph API["⚡ FastAPI Backend"]
         AUTH["Auth Router<br/>/signup · /signin"]
-        INS["Insurance Router<br/>/insurance-obtained<br/>/user-profile<br/>/feedbacks<br/>/claim-requests<br/>/insurance-applications<br/>/clear-memory"]
+        INS["Insurance Router<br/>/insurance-obtained<br/>/user-profile · /feedbacks<br/>/claim-requests<br/>/insurance-applications"]
         AGENT["Agent Router<br/>POST /agent/chat"]
     end
 
-    subgraph Core["🧠 Main Agent - ReAct Loop"]
+    subgraph Guards["🔒 Guardrails Layer"]
+        GI["Input Filter<br/>• Injection detection<br/>• Fraud keywords<br/>• Toxic language<br/>• Out-of-scope"]
+        GO["Output Filter<br/>• Over-promise replace<br/>• Hallucination redact<br/>• Disclaimer append"]
+    end
+
+    subgraph Core["🧠 Main Agent — Raw Python ReAct Loop"]
         LOOP["ReAct Controller<br/>• Parse LLM output<br/>• TOOL_CALL → call tool<br/>• REPLY → return to user<br/>• Max 5 iterations"]
         LLM["LLM Interface<br/>NVIDIA NeMo / Llama 3.3<br/>Multi-key rotation"]
         MEM["Memory Manager<br/>MongoDB: main_agent_memory"]
+        LOG["Structured Logger<br/>→ logs/app.log<br/>Rotating 5MB × 5"]
     end
 
-    subgraph MCP_Server["🔧 MCP Server - stdio"]
+    subgraph MCP_Server["🔧 MCP Server — stdio JSON-RPC"]
         T1["🔍 suggest_insurance"]
         T2["📋 claim_procedure"]
         T3["⚖️ check_coverage"]
@@ -65,211 +108,258 @@ graph TB
     end
 
     subgraph Agents["🤖 Specialised Sub-Agents"]
-        SA["Insurance Suggestion<br/>Agent<br/>• 4-phase conversation<br/>• Profile collection<br/>• Query decomposition<br/>• Parallel RAG search"]
-        CA["Claim Process<br/>Agent<br/>• Index matching<br/>• RAG retrieval<br/>• Step formatting"]
-        CC["Coverage Check<br/>Agent<br/>• Multi-index parallel<br/>• Iterative refinement<br/>• Sufficiency evaluation"]
+        SA["Insurance Suggestion<br/>• 4-phase conversation<br/>• Profile collection<br/>• Query decomposition<br/>• Parallel RAG search"]
+        CA["Claim Process<br/>• Index matching<br/>• RAG retrieval<br/>• Step formatting"]
+        CC["Coverage Check<br/>• Multi-index parallel<br/>• Iterative refinement<br/>• Sufficiency evaluation"]
     end
 
-    subgraph Data["💾 Data Layer"]
-        MONGO[("MongoDB Atlas<br/>• users<br/>• user_insurance<br/>• main_agent_memory<br/>• suggestion_memory<br/>• user_feedbacks<br/>• user_claim_requests<br/>• insurance_applications<br/>• insurance_available")]
-        ES[("Elasticsearch<br/>• Policy document indexes<br/>• Hybrid search<br/>BM25 + kNN")]
-    end
-
-    subgraph DocPipeline["📄 Document Pipeline"]
+    subgraph RAG["📄 RAG Pipeline"]
         DOC["Doc Processing<br/>PDF · DOCX · PPTX · TXT"]
         CHUNK["Text Chunking<br/>1000 chars / 200 overlap"]
         EMB["Sentence Transformers<br/>BAAI/bge-base-en-v1.5"]
     end
 
-    LOGIN & SETUP & UPLOAD & CHAT & PROFILE --> AUTH & INS & AGENT
-    AGENT --> LOOP
+    subgraph Data["💾 Data Layer"]
+        MONGO[("MongoDB Atlas")]
+        ES[("Elasticsearch 8.x<br/>Hybrid Search")]
+    end
+
+    Client --> API
+    AGENT --> GI --> LOOP
     LOOP <--> LLM
     LOOP <--> MEM
-    LOOP <-->|"stdio JSON-RPC"| MCP_Server
+    LOOP <--> LOG
+    LOOP <-->|"stdio"| MCP_Server
+    LOOP --> GO
     T1 --> SA
     T2 --> CA
     T3 --> CC
-    T4 --> MONGO
-    T5 --> MONGO
-    T6 --> MONGO
-    T7 --> MONGO
+    T4 & T5 & T6 & T7 --> MONGO
     SA & CA & CC --> ES
     SA & CA & CC --> LLM
     SA --> MONGO
     DOC --> CHUNK --> EMB --> ES
-    INS --> MONGO
-    AUTH --> MONGO
+    INS & AUTH --> MONGO
 
     style Client fill:#1a1a2e,stroke:#e94560,color:#fff
     style API fill:#16213e,stroke:#0f3460,color:#fff
+    style Guards fill:#2c003e,stroke:#e94560,color:#fff
     style Core fill:#0f3460,stroke:#533483,color:#fff
     style MCP_Server fill:#533483,stroke:#e94560,color:#fff
     style Agents fill:#2c003e,stroke:#e94560,color:#fff
+    style RAG fill:#16213e,stroke:#533483,color:#fff
     style Data fill:#1a1a2e,stroke:#0f3460,color:#fff
-    style DocPipeline fill:#16213e,stroke:#533483,color:#fff
 ```
 
 ---
 
-## 🔄 Agent Decision Flow
+## 🔄 Advanced RAG Pipeline — With Iterative Refinement & Query Decomposition
 
-This is the ReAct (Reason + Act) loop that powers every user interaction:
+This is **not a simple retrieve-and-answer pipeline**. Our RAG system uses **query decomposition**, **iterative refinement loops**, and **sufficiency validation** to ensure high-quality answers:
+
+```mermaid
+graph TD
+    subgraph Ingestion["📥 Document Ingestion (One-time)"]
+        A["📄 Insurance PDF / DOCX / PPTX / TXT"] --> B["Text Extraction<br/>PyPDF2 / python-docx / python-pptx"]
+        B --> C["Chunking<br/>1000 chars, 200 overlap"]
+        C --> D["Embedding<br/>BAAI/bge-base-en-v1.5"]
+        D --> E[("Elasticsearch Index<br/>text + dense_vector")]
+    end
+
+    subgraph QueryPhase["🔍 Query Phase — Iterative RAG Loop"]
+        F["🧑 User Query"] --> G["Query Decomposition<br/>LLM generates 2-3<br/>focused sub-queries<br/>(eligibility, benefits,<br/>premium, exclusions)"]
+        G --> H["Sub-Query 1"]
+        G --> I["Sub-Query 2"]
+        G --> J["Sub-Query 3"]
+
+        H & I & J --> K["Parallel Hybrid Search<br/>BM25 keyword + kNN vector<br/>across multiple indexes"]
+        E --> K
+        K --> L["Top-K Chunks<br/>(deduplicated)"]
+    end
+
+    subgraph Validation["✅ Sufficiency Validation Loop"]
+        L --> M{"Evaluator LLM:<br/>Is content sufficient<br/>to answer the query?"}
+        M -->|"YES ✅"| N["Summarise per Index"]
+        M -->|"NO ❌ (max 3 retries)"| O["Refine Query<br/>LLM generates improved<br/>search query"]
+        O --> K
+    end
+
+    subgraph Answer["🎯 Final Answer Generation"]
+        N --> P["Combine All<br/>Index Summaries"]
+        P --> Q["Decision LLM<br/>+ User Profile<br/>+ Conversation History"]
+        Q --> R["📋 Final Personalised<br/>Recommendation"]
+    end
+
+    style A fill:#533483,stroke:#e94560,color:#fff
+    style E fill:#0f3460,stroke:#533483,color:#fff
+    style F fill:#e94560,stroke:#533483,color:#fff
+    style G fill:#533483,stroke:#e94560,color:#fff
+    style M fill:#e94560,stroke:#0f3460,color:#fff
+    style O fill:#533483,stroke:#e94560,color:#fff
+    style R fill:#e94560,stroke:#533483,color:#fff
+```
+
+### RAG Techniques Used
+
+| Technique | Where | Purpose |
+|-----------|-------|---------|
+| **Query Decomposition** | `insurance_suggestion_agent` | Breaks user intent into 2-3 focused sub-queries (eligibility, benefits, cost, exclusions) |
+| **Parallel Multi-Index Search** | `coverage_check_agent`, `insurance_suggestion_agent` | Searches multiple insurance indexes concurrently via `ThreadPoolExecutor` |
+| **Hybrid Search (BM25 + kNN)** | `rag_system.py` | Combines keyword matching with semantic vector similarity for better relevance |
+| **Iterative Query Refinement** | `coverage_check_agent` | If retrieved content is insufficient, LLM generates a refined query (up to 3 retries) |
+| **Sufficiency Evaluation** | `coverage_check_agent` | Evaluator LLM decides if results are good enough before proceeding |
+| **Per-Index Summarisation** | `coverage_check_agent` | Each index's results are summarised before final decision |
+| **Profile-Aware Context** | `insurance_suggestion_agent` | User profile (age, income, dependents) is injected into the final LLM context |
+
+---
+
+## 🔄 Agent Decision Flow (ReAct Loop)
 
 ```mermaid
 sequenceDiagram
-    participant U as User
+    participant U as 🧑 User
     participant FE as React Frontend
-    participant API as FastAPI /agent/chat
-    participant MA as Main Agent
+    participant GI as 🔒 Input Guardrail
+    participant MA as 🧠 Main Agent
     participant LLM as LLM (NVIDIA)
     participant MCP as MCP Server
     participant Tool as Sub-Agent / DB
+    participant GO as 🔒 Output Guardrail
+    participant LOG as 📝 Logger
 
-    U->>FE: Types message in Chat UI
-    FE->>API: POST {user_message} + Bearer token
-    API->>MA: chat_with_agent(userid, message)
+    U->>FE: Types message
+    FE->>MA: POST /agent/chat + JWT
+    MA->>LOG: Log: user message received
+    MA->>GI: check_input(message)
+
+    alt 🚫 Blocked (fraud/injection/toxic)
+        GI-->>MA: blocked + canned response
+        MA->>LOG: Log: input blocked (reason)
+        MA-->>FE: Safe canned response
+    else ✅ Allowed
+        GI-->>MA: allowed
+    end
+
     MA->>MA: Load memory from MongoDB
 
     loop ReAct Loop (max 5 iterations)
-        MA->>LLM: Prompt with tools + history
+        MA->>LLM: Prompt + tools + history
+        MA->>LOG: Log: ReAct iteration N
         LLM-->>MA: Response
 
-        alt TOOL_CALL: {...}
-            MA->>MA: Parse tool name + args
-            MA->>MA: Auto-inject user_id
+        alt TOOL_CALL
+            MA->>LOG: Log: tool call (name, args)
             MA->>MCP: call_tool(name, args)
-            MCP->>Tool: Execute tool logic
-            Tool-->>MCP: Result string
-            MCP-->>MA: Tool result
-            MA->>MA: Append result to history
-            Note over MA: Continue loop
-        else REPLY: ...
-            MA->>MA: Save history to MongoDB
-            MA-->>API: Return reply text
-            API-->>FE: {reply: "..."}
-            FE-->>U: Display in chat bubble
-            Note over MA: Exit loop
-        else Malformed / Raw text
-            MA->>MA: Handle fallback
-            Note over MA: Continue or exit
+            MCP->>Tool: Execute
+            Tool-->>MCP: Result
+            MCP-->>MA: Result text
+            MA->>LOG: Log: tool result (length)
+            Note over MA: Append to history, continue
+        else REPLY
+            MA->>GO: clean_output(reply)
+            GO-->>MA: Sanitised reply
+            MA->>LOG: Log: agent reply sent
+            MA->>MA: Save memory
+            MA-->>FE: Final reply
+            FE-->>U: Display in chat
         end
-    end
-
-    alt Loop exhausted (5 iterations)
-        MA-->>API: "I need more time..."
     end
 ```
 
 ---
 
-## 🖥️ Frontend (React + TypeScript + Vite)
+## 🔒 Guardrails System
 
-The frontend is a **single-page application** built with React 18, TypeScript, Vite, and Tailwind CSS. It provides a polished, responsive interface for interacting with the AI agent.
+The agent has **keyword-based input and output safety filters** — a fast, deterministic first layer of protection:
 
-### Tech Stack
+### Input Guardrails (block before LLM)
 
-| Technology | Version | Purpose |
-|---|---|---|
-| React | 18.2 | UI framework |
-| TypeScript | 5.x | Type safety |
-| Vite | 4.x | Build tool & dev server |
-| Tailwind CSS | 3.3 | Utility-first styling |
-| React Router | 6.8 | Client-side routing |
-| Axios | 1.4 | HTTP client with JWT interceptor |
+| Category | Action | Examples |
+|----------|--------|---------|
+| **Prompt Injection** | Block + safe reply | "ignore instructions", "jailbreak", "bypass rules" |
+| **Fraud Intent** | Block + safe reply | "fake claim", "insurance fraud", "false documents" |
+| **Toxic Language** | Block + safe reply | "stupid bot", "shut up", "useless bot" |
+| **Out-of-Scope** | Block + safe reply | "movie recommendation", "hack wifi", "crypto trading" |
 
-### Pages & Components
+### Output Guardrails (sanitise after LLM)
 
-| Route | Component | Description |
-|---|---|---|
-| `/login` | `Login.tsx` | Email + password sign-in form |
-| `/signup` | `Signup.tsx` | New user registration |
-| `/setup` | `Setup.tsx` | Select existing insurance policies from available companies (checkbox grid) |
-| `/add-insurance` | `AddInsurance.tsx` | Upload insurance documents (PDF/DOCX/PPTX/TXT) for RAG indexing |
-| `/chat` | `Chat.tsx` | Main AI chat interface with profile modal |
+| Layer | Action | Examples |
+|-------|--------|---------|
+| **Over-Promising** | Replace phrase | "guaranteed return" → "potential return" |
+| **Hallucinated Offers** | Redact | "secret insurance" → "[information not verified]" |
+| **Sensitive Claims** | Append disclaimer | Detects "legal advice" → adds ⚠️ disclaimer |
 
-### Chat Interface Features
+---
 
-- **Real-time messaging** with user/agent avatars and timestamps
-- **Typing indicator** with animated dots while the agent processes
-- **Profile modal** — view user details, purchased insurances, feedbacks, claim requests, and applications (all fetched in parallel)
-- **Memory reset** — clear all conversation history with one click
-- **Glassmorphism design** — gradient header, backdrop blur, rounded chat bubbles
-- **Protected routes** — all pages except login/signup require JWT authentication
-- **Auto token injection** — Axios interceptor adds `Bearer` token to every request
+## 📝 Structured Logging
 
-### Frontend Structure
+All actions are logged to both **console** and **rotating log file** (`logs/app.log`, 5 MB × 5 backups):
 
 ```
-ragworks_frontEnd/
-├── index.html                   # Entry point
-├── package.json                 # Dependencies & scripts
-├── vite.config.ts               # Vite configuration
-├── tailwind.config.js           # Tailwind theme
-├── tsconfig.json                # TypeScript config
-│
-└── src/
-    ├── main.tsx                 # React mount + BrowserRouter
-    ├── App.tsx                  # Route definitions + ProtectedRoute
-    ├── index.css                # Tailwind imports
-    │
-    ├── components/
-    │   ├── Login.tsx            # Sign-in form
-    │   ├── Signup.tsx           # Registration form
-    │   ├── Setup.tsx            # Insurance selection grid
-    │   ├── AddInsurance.tsx     # Document upload form
-    │   └── Chat.tsx             # AI chat + profile modal
-    │
-    └── services/
-        └── api.ts               # Axios instance + all API calls
+2026-04-29 01:18:33 │ INFO     │ main_agent │ chat_with_agent:121 │ Tool call | user=abc123 | tool=suggest_insurance | args={...}
+2026-04-29 01:18:34 │ INFO     │ main_agent │ chat_with_agent:127 │ Tool result | tool=suggest_insurance | length=342 chars
+2026-04-29 01:18:35 │ WARNING  │ guardrails.input_filter │ check_input:86 │ Input BLOCKED | reason=injection | keyword='ignore instructions'
 ```
 
-### Running the Frontend
-
-```bash
-cd ragworks_frontEnd
-npm install
-npm run dev
-```
-
-The dev server runs at `http://localhost:5173` and proxies API calls to `http://127.0.0.1:8000`.
+| Event | Level | Module |
+|-------|-------|--------|
+| User message received | `INFO` | `main_agent` |
+| Guardrail block | `WARNING` | `guardrails.input_filter` |
+| Output sanitised | `INFO` | `guardrails.output_filter` |
+| Tool call (name + args) | `INFO` | `main_agent` |
+| Tool result | `INFO` / `DEBUG` | `main_agent` |
+| RAG search iteration | `INFO` | `agents.*` |
+| Errors (with traceback) | `ERROR` | all modules |
 
 ---
 
 ## 🤖 MCP Tools Reference
 
-The MCP server exposes **7 tools** that the main agent can call autonomously:
+| Tool | Parameters | Purpose |
+|------|-----------|---------|
+| `suggest_insurance` | `user_message` | Multi-turn recommendation with profile collection & parallel RAG |
+| `claim_procedure` | `user_message` | Step-by-step claim guide via RAG search |
+| `check_coverage` | `index_names`, `user_query` | Compare coverage across policies with iterative refinement |
+| `fetch_user_insurance` | — | Retrieve all user's policies |
+| `store_user_feedback` | `rating`, `comment` | Record feedback (1-5 rating) |
+| `store_claim_request` | `insurance_name`, `claim_description`, `claim_amount` | Submit claim request |
+| `new_insurance_application` | `insurance_type`, `applicant_age`, `reason` | Apply for new policy |
 
-| Tool | Parameters | Purpose | Storage |
-|---|---|---|---|
-| `suggest_insurance` | `user_message` | Multi-turn insurance recommendation with profile collection & parallel RAG | `suggestion_memory` |
-| `claim_procedure` | `user_message` | Step-by-step claim filing guide via RAG search on policy docs | — |
-| `check_coverage` | `index_names`, `user_query` | Compare coverage across multiple insurance policies with iterative RAG refinement | `coverage_check_memory` |
-| `fetch_user_insurance` | — | Retrieve all insurance policies owned by the user | reads `user_insurance` |
-| `store_user_feedback` | `rating`, `comment` | Record user feedback (1-5 rating + comment) | `user_feedbacks` |
-| `store_claim_request` | `insurance_name`, `claim_description`, `claim_amount` | Submit a formal insurance claim request | `user_claim_requests` |
-| `new_insurance_application` | `insurance_type`, `applicant_age`, `reason` | Apply for a new insurance policy | `insurance_applications` |
-
-> **Note:** `user_id` is auto-injected by the main agent for all tools — the LLM never sees or handles it.
+> **Note:** `user_id` is auto-injected by the main agent — the LLM never handles it.
 
 ---
 
-## 📂 Full Project Structure
+## 📂 Project Structure
 
 ```
 ragworksProject/
 ├── main.py                      # FastAPI app entry point
-├── main_agent.py                # 🧠 Core ReAct agent with MCP client
+├── main_agent.py                # 🧠 Core ReAct agent (raw Python, no frameworks)
 ├── mcp_server.py                # 🔧 MCP tool server (stdio transport)
-├── rag_system.py                # Elasticsearch hybrid search (BM25 + kNN)
-├── doc_processing.py            # Document ingestion pipeline
 │
-├── agents/                      # Specialised sub-agents
-│   ├── insurance_suggestion_agent.py   # 4-phase suggestion flow
-│   ├── claim_process.py                # Claim procedure retrieval
-│   ├── coverage_check_agent.py         # Multi-index coverage analysis
-│   └── user_details.py                 # User insurance data access
+├── rag/                         # 📄 RAG Pipeline
+│   ├── rag_system.py            #   Elasticsearch hybrid search (BM25 + kNN)
+│   ├── doc_processing.py        #   Text extraction + chunking
+│   └── doc_uploader.py          #   File/directory upload utilities
 │
-├── routes/                      # FastAPI routers
+├── agents/                      # 🤖 Specialised sub-agents
+│   ├── insurance_suggestion_agent.py
+│   ├── claim_process.py
+│   ├── coverage_check_agent.py
+│   ├── user_details.py
+│   └── prompts/                 #   Centralised prompt templates
+│       └── prompts.py
+│
+├── guardrails/                  # 🔒 Safety filters
+│   ├── keywords.py              #   All keyword lists
+│   ├── input_filter.py          #   Pre-LLM input checking
+│   └── output_filter.py         #   Post-LLM output sanitisation
+│
+├── services/
+│   ├── llms.py                  # NVIDIA LLM client + key rotation
+│   └── logger.py                # Centralized logging config
+│
+├── routes/
 │   ├── auth.py                  # Signup / Signin (JWT)
 │   └── insurance.py             # Insurance CRUD + memory + profile
 │
@@ -280,17 +370,20 @@ ragworksProject/
 │   └── db.py                    # MongoDB collection accessors
 │
 ├── models/
-│   └── schemas.py               # Pydantic request/response models
+│   └── schemas.py               # Pydantic models
 │
-├── services/
-│   └── llms.py                  # NVIDIA LLM client with key rotation
+├── logs/                        # 📝 Auto-generated log files
+│   └── app.log
+│
+├── frontEnd/                    # 🖥️ React + TypeScript + Vite + Tailwind
+│   └── src/
+│       ├── components/          #   Login, Signup, Setup, AddInsurance, Chat
+│       └── services/api.ts      #   Axios + JWT interceptor
 │
 ├── tests/
-│   ├── conftest.py              # Test fixtures
 │   └── test_main_agent.py       # 18 unit tests + conversation replay
 │
-├── ragworks_frontEnd/           # 🖥️ React frontend (see above)
-│
+├── assets/                      # README images
 ├── requirements.txt
 └── .env                         # Environment variables (not committed)
 ```
@@ -302,48 +395,42 @@ ragworksProject/
 ### Prerequisites
 
 | Dependency | Version | Purpose |
-|---|---|---|
-| Python | 3.12+ | Backend runtime |
-| Node.js | 18+ | Frontend build |
-| MongoDB Atlas | — | User data, memory, applications |
-| Elasticsearch | 8.x | RAG hybrid search engine |
+|------------|---------|---------|
+| Python | 3.12+ | Backend |
+| Node.js | 18+ | Frontend |
+| MongoDB Atlas | — | Data storage |
+| Elasticsearch | 8.x | RAG search |
 | NVIDIA API Key(s) | — | LLM inference |
 
-### 1. Clone & Install Backend
+### 1. Clone & Install
 
 ```bash
 git clone https://github.com/Manojkumar211205/insurance_hub.git
 cd insurance_hub
+
+# Backend
 python -m venv myenv
-myenv\Scripts\activate        # Windows
+myenv\Scripts\activate
 pip install -r requirements.txt
-```
 
-### 2. Install Frontend
-
-```bash
-cd ragworks_frontEnd
+# Frontend
+cd frontEnd
 npm install
 cd ..
 ```
 
-### 3. Configure Environment
-
-Create a `.env` file in the project root:
+### 2. Configure `.env`
 
 ```env
 MONGO_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/
 JWT_SECRET=your-jwt-secret
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
-
-# NVIDIA API keys (supports multiple for rate-limit rotation)
 nvidiaKey1=nvapi-xxxxxxxxxxxx
 nvidiaKey2=nvapi-xxxxxxxxxxxx
-nvidiaKey3=nvapi-xxxxxxxxxxxx
 ```
 
-### 4. Start Elasticsearch
+### 3. Start Elasticsearch
 
 ```bash
 docker run -d --name elasticsearch \
@@ -353,27 +440,27 @@ docker run -d --name elasticsearch \
   docker.elastic.co/elasticsearch/elasticsearch:8.12.0
 ```
 
-### 5. Upload Insurance Documents
+### 4. Upload Insurance Documents
 
 ```python
-from doc_processing import process_and_store_document
-process_and_store_document("Health Insurance Research bajaj.pdf", collection_name="bajaj_health_insurance")
+from rag.doc_uploader import upload_file
+upload_file("Health Insurance Research bajaj.pdf", "bajaj_health_insurance")
 ```
 
-### 6. Run Both Servers
+### 5. Run
 
 ```bash
 # Terminal 1 — Backend
 python -m uvicorn main:app --reload
 
 # Terminal 2 — Frontend
-cd ragworks_frontEnd
+cd frontEnd
 npm run dev
 ```
 
 | Service | URL |
-|---|---|
-| Backend API | `http://127.0.0.1:8000` |
+|---------|-----|
+| Backend | `http://127.0.0.1:8000` |
 | Frontend | `http://localhost:5173` |
 | API Docs | `http://127.0.0.1:8000/docs` |
 
@@ -383,112 +470,74 @@ npm run dev
 
 ### Authentication
 
-| Method | Endpoint | Body | Description |
-|---|---|---|---|
-| POST | `/signup` | `{username, email, password}` | Create account |
-| POST | `/signin` | `{email, password}` | Get JWT token |
+| Method | Endpoint | Body |
+|--------|----------|------|
+| POST | `/signup` | `{username, email, password}` |
+| POST | `/signin` | `{email, password}` → JWT token |
 
 ### Agent
 
-| Method | Endpoint | Auth | Body | Description |
-|---|---|---|---|---|
-| POST | `/agent/chat` | 🔒 Bearer | `{user_message}` | Chat with the AI agent |
+| Method | Endpoint | Auth | Body |
+|--------|----------|------|------|
+| POST | `/agent/chat` | 🔒 | `{user_message}` |
 
 ### Insurance Management
 
 | Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/insurance-obtained` | 🔒 | List user's insurance policies |
-| POST | `/insurance-obtained` | 🔒 | Add an insurance entry manually |
-| POST | `/add-insurance` | 🔒 | Upload & process insurance document |
-| GET | `/insurance-available` | — | List all available insurance products |
-| GET | `/user-profile` | 🔒 | Get user details + purchased insurances |
-| GET | `/feedbacks` | 🔒 | List user's submitted feedbacks |
-| GET | `/claim-requests` | 🔒 | List user's claim requests |
-| GET | `/insurance-applications` | 🔒 | List user's insurance applications |
-| DELETE | `/clear-memory` | 🔒 | Clear all agent conversation memory |
+|--------|----------|------|-------------|
+| GET | `/insurance-obtained` | 🔒 | List user's policies |
+| POST | `/insurance-obtained` | 🔒 | Add entry manually |
+| POST | `/add-insurance` | 🔒 | Upload & process document |
+| GET | `/insurance-available` | — | List all products |
+| GET | `/user-profile` | 🔒 | User details + insurances |
+| GET | `/feedbacks` | 🔒 | User feedbacks |
+| GET | `/claim-requests` | 🔒 | User claims |
+| GET | `/insurance-applications` | 🔒 | User applications |
+| DELETE | `/clear-memory` | 🔒 | Clear conversation memory |
 
 ---
 
 ## 🧪 Testing
-
-Run the full test suite (18 unit tests + 1 conversation replay):
 
 ```bash
 pip install pytest pytest-asyncio
 python -m pytest tests/test_main_agent.py -v
 ```
 
-### Test Coverage
-
-| Test | What it verifies |
-|---|---|
-| `TestFetchUserInsurance` | Tool call + user_id injection |
-| `TestStoreFeedback` | Feedback storage flow |
-| `TestStoreClaimRequest` | Claim submission flow |
-| `TestNewInsuranceApplication` | Application submission flow |
-| `TestCoverageCheckFlow` | Multi-tool chain (fetch → coverage) |
-| `TestMaxLoopFallback` | 5-loop limit produces fallback message |
-| `TestMalformedToolCall` | Broken JSON is handled gracefully |
-| `TestDirectReply` | LLM replies without tool calls |
-| `TestMCPConnectionError` | Graceful error on MCP failure |
-| `TestUserIdAutoInjection` | Parametrised for all 6 tools |
-| `TestMemorySaved` | History persists after reply |
-| `TestFallbackResponse` | Unformatted LLM output returned as-is |
-| `TestInsuranceSuggestionConversation` | Full 9-turn conversation replay → logs to `.txt` |
-
----
-
-## 🔍 RAG Pipeline
-
-```mermaid
-graph LR
-    A["📄 Insurance PDF"] --> B["Text Extraction<br/>PyPDF2 / docx / pptx"]
-    B --> C["Chunking<br/>1000 chars, 200 overlap"]
-    C --> D["Embedding<br/>BAAI/bge-base-en-v1.5"]
-    D --> E[("Elasticsearch Index<br/>text + dense_vector")]
-
-    F["🔍 User Query"] --> G["Query Embedding"]
-    G --> H["Hybrid Search<br/>BM25 keyword +<br/>kNN vector"]
-    E --> H
-    H --> I["Top-K Chunks"]
-    I --> J["LLM Context<br/>→ Final Answer"]
-
-    style A fill:#533483,stroke:#e94560,color:#fff
-    style E fill:#0f3460,stroke:#533483,color:#fff
-    style J fill:#e94560,stroke:#533483,color:#fff
-```
+18 unit tests covering tool calls, memory persistence, error handling, guardrails, and a full 9-turn conversation replay.
 
 ---
 
 ## 💡 Key Design Decisions
 
 | Decision | Rationale |
-|---|---|
-| **MCP over direct function calls** | Decouples tool logic from the agent; tools can be updated/added without modifying the agent |
-| **ReAct loop (5 iterations)** | Allows multi-step reasoning (e.g., fetch insurance → check coverage → reply) while preventing infinite loops |
-| **Auto user_id injection** | Prevents the LLM from hallucinating or leaking user IDs; enforces security |
-| **NVIDIA multi-key rotation** | Handles rate limits gracefully by cycling through API keys |
-| **Parallel RAG search** | Sub-agents search multiple insurance indexes concurrently via `ThreadPoolExecutor` |
-| **Iterative query refinement** | Coverage check agent refines search queries up to 3× if initial results are insufficient |
-| **JWT + Protected routes** | Frontend uses localStorage token with Axios interceptor; backend validates via `get_current_user` dependency |
-| **Memory per user** | Each user has isolated conversation history stored in MongoDB for continuity |
+|----------|-----------|
+| **Raw Python agent (no LangChain)** | Full control over agent loop, memory, tool calls — no framework abstractions or overhead |
+| **MCP protocol** | Decouples tools from agent; tools can be updated without touching agent logic |
+| **ReAct loop (5 iterations)** | Multi-step reasoning with bounded execution |
+| **Iterative RAG refinement** | Up to 3 retries with refined queries ensures high-quality retrieval |
+| **Query decomposition** | Single user query → 2-3 focused sub-queries for better coverage |
+| **Keyword guardrails** | Fast, deterministic safety layer before/after LLM |
+| **Centralized prompts** | All prompts in `agents/prompts/prompts.py` for easy tuning |
+| **Structured logging** | Every action logged to rotating file for debugging & audit |
+| **Parallel RAG search** | `ThreadPoolExecutor` for concurrent multi-index search |
+| **Auto user_id injection** | Security — LLM never sees or handles user IDs |
 
 ---
 
 ## 📊 MongoDB Collections
 
-| Collection | Purpose | Key Fields |
-|---|---|---|
-| `users` | User accounts | `username`, `email`, `password` |
-| `user_insurance` | Purchased policies | `userid`, `insurance_obtained[]` |
-| `insurance_available` | Catalog of available products | `insurance_available` |
-| `main_agent_memory` | Main agent conversation history | `userid`, `history[]` |
-| `suggestion_memory` | Suggestion agent session state | `user_id`, `history[]`, `profile`, `phase` |
-| `coverage_check_memory` | Coverage agent memory | `user_id`, `history[]` |
-| `user_feedbacks` | User feedback records | `userid`, `rating`, `comment` |
-| `user_claim_requests` | Filed claim requests | `userid`, `insurance_name`, `claim_amount`, `status` |
-| `insurance_applications` | New policy applications | `userid`, `insurance_type`, `applicant_age`, `status` |
+| Collection | Purpose |
+|------------|---------|
+| `users` | User accounts |
+| `user_insurance` | Purchased policies |
+| `insurance_available` | Product catalog |
+| `main_agent_memory` | Main agent history |
+| `suggestion_memory` | Suggestion agent sessions |
+| `coverage_check_memory` | Coverage agent memory |
+| `user_feedbacks` | Feedback records |
+| `user_claim_requests` | Claim requests |
+| `insurance_applications` | New applications |
 
 ---
 
@@ -499,5 +548,5 @@ This project is for educational and demonstration purposes.
 ---
 
 <div align="center">
-  <sub>Built with ❤️ using React, FastAPI, MCP, Elasticsearch, and NVIDIA LLMs</sub>
+  <sub>Built from scratch with ❤️ — Raw Python Agent + React + FastAPI + MCP + Elasticsearch + NVIDIA LLMs</sub>
 </div>

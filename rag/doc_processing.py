@@ -2,7 +2,7 @@ import os
 from PyPDF2 import PdfReader
 from docx import Document
 from pptx import Presentation
-from rag_system import RAGSystem
+from rag.rag_system import RAGSystem
 
 def extract_text_from_pdf(file_path):
     reader = PdfReader(file_path)
